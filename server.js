@@ -5,8 +5,18 @@ import axios from "axios";
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(cors());
+/* -------------------- MIDDLEWARE -------------------- */
+
+app.use(cors({
+    origin: [
+        "https://support.k7devs.com",
+        "https://app.k7devs.com"
+    ]
+}));
+
 app.use(express.json());
+
+/* -------------------- HEALTH ROUTES -------------------- */
 
 app.get("/", (req, res) => {
     res.json({
@@ -15,7 +25,15 @@ app.get("/", (req, res) => {
     });
 });
 
+app.get("/api/health", (req, res) => {
+    res.json({
+        success: true,
+        status: "online"
+    });
+});
+
 /* -------------------- CRASH PROTECTION -------------------- */
+
 process.on("uncaughtException", (err) => {
     console.error("UNCAUGHT EXCEPTION:", err);
 });
@@ -32,10 +50,7 @@ function generateTicketId(prefix = "SUP") {
 
 async function sendDiscordWebhook(webhook, embed) {
     try {
-        if (!webhook) {
-            console.error("Missing webhook URL");
-            return;
-        }
+        if (!webhook) return;
 
         await axios.post(webhook, {
             embeds: [embed]
@@ -45,15 +60,6 @@ async function sendDiscordWebhook(webhook, embed) {
         console.error("Discord webhook error:", err.message);
     }
 }
-
-/* -------------------- HEALTH CHECK -------------------- */
-
-app.get("/api/health", (req, res) => {
-    res.json({
-        success: true,
-        status: "online"
-    });
-});
 
 /* -------------------- SUPPORT TICKETS -------------------- */
 
