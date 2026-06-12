@@ -353,4 +353,3 @@ app.post("/api/security", async (req, res) => {
 app.listen(PORT, () => {
     console.log(`Support API running on port ${PORT}`);
 });
-```
