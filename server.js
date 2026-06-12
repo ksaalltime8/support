@@ -128,24 +128,41 @@ app.post("/api/report-bug", async (req, res) => {
     try {
         const { name, email, title, description, version } = req.body || {};
 
-        await sendDiscordWebhook(process.env.DISCORD_BUGS_WEBHOOK, {
-            title: "🐞 New Bug Report",
-            color: 15158332,
-            fields: [
-                { name: "Reporter", value: name || "Unknown" },
-                { name: "Email", value: email || "Not provided" },
-                { name: "Title", value: title || "Untitled" },
-                { name: "Version", value: version || "Unknown" },
-                { name: "Description", value: description || "No description" }
-            ],
-            timestamp: new Date()
+        const webhook = process.env.DISCORD_BUGS_WEBHOOK;
+
+        console.log("BUG WEBHOOK:", webhook);
+
+        if (!webhook) {
+            return res.status(500).json({
+                success: false,
+                error: "Bug webhook not configured"
+            });
+        }
+
+        await axios.post(webhook, {
+            embeds: [{
+                title: "🐞 New Bug Report",
+                color: 15158332,
+                fields: [
+                    { name: "Reporter", value: name || "Unknown" },
+                    { name: "Email", value: email || "Not provided" },
+                    { name: "Title", value: title || "Untitled" },
+                    { name: "Version", value: version || "Unknown" },
+                    { name: "Description", value: description || "No description" }
+                ],
+                timestamp: new Date()
+            }]
         });
 
-        res.json({ success: true });
+        return res.json({ success: true });
 
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ success: false });
+        console.error("BUG ROUTE ERROR:", err.response?.data || err.message);
+
+        return res.status(500).json({
+            success: false,
+            error: "Failed to send bug report"
+        });
     }
 });
 
