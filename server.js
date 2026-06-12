@@ -10,8 +10,12 @@ const PORT = process.env.PORT || 3000;
 app.use(cors({
     origin: [
         "https://support.k7devs.com",
-        "https://app.k7devs.com"
-    ]
+        "https://app.k7devs.com",
+        "http://127.0.0.1:5500",
+        "http://localhost:5500"
+    ],
+    methods: ["GET", "POST", "OPTIONS"],
+    allowedHeaders: ["Content-Type"]
 }));
 
 app.use(express.json());
