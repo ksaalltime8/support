@@ -8,6 +8,13 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
+app.get("/", (req, res) => {
+    res.json({
+        success: true,
+        message: "Support API is running"
+    });
+});
+
 /* -------------------- CRASH PROTECTION -------------------- */
 process.on("uncaughtException", (err) => {
     console.error("UNCAUGHT EXCEPTION:", err);
