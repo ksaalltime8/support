@@ -216,6 +216,51 @@ app.post("/api/feedback", async (req, res) => {
     }
 });
 
+
+/* -------------------- FEEDBACK -------------------- */
+
+app.post("/api/feedback", async (req, res) => {
+    try {
+        const { name, rating, feedback } = req.body;
+
+        await sendDiscordWebhook(process.env.DISCORD_FEEDBACK_WEBHOOK, {
+            title: "⭐ New User Feedback",
+            color: 15844367,
+            fields: [
+                {
+                    name: "User",
+                    value: name || "Anonymous",
+                    inline: true
+                },
+                {
+                    name: "Rating",
+                    value: `⭐ ${rating || "5"}/5`,
+                    inline: true
+                },
+                {
+                    name: "Feedback",
+                    value: feedback || "No message provided"
+                }
+            ],
+            timestamp: new Date()
+        });
+
+        res.json({
+            success: true,
+            message: "Feedback sent"
+        });
+
+    } catch (err) {
+        console.error("FEEDBACK ERROR:", err);
+
+        res.status(500).json({
+            success: false,
+            error: "Failed to send feedback"
+        });
+    }
+});
+
+
 /* -------------------- BILLING -------------------- */
 
 app.post("/api/billing", async (req, res) => {
