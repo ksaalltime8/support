@@ -196,23 +196,45 @@ app.post("/api/feature-request", async (req, res) => {
 
 app.post("/api/feedback", async (req, res) => {
     try {
-        const { name, feedback } = req.body || {};
+        const { name, rating, feedback } = req.body;
+
+        // Convert rating to real stars
+        const stars = "⭐".repeat(Number(rating || 5));
 
         await sendDiscordWebhook(process.env.DISCORD_FEEDBACK_WEBHOOK, {
-            title: "⭐ User Feedback",
+            title: "⭐ New User Feedback",
             color: 15844367,
             fields: [
-                { name: "User", value: name || "Anonymous" },
-                { name: "Feedback", value: feedback || "No feedback" }
+                {
+                    name: "User",
+                    value: name || "Anonymous",
+                    inline: true
+                },
+                {
+                    name: "Rating",
+                    value: `${stars} (${rating || 5}/5)`,
+                    inline: true
+                },
+                {
+                    name: "Feedback",
+                    value: feedback || "No message provided"
+                }
             ],
             timestamp: new Date()
         });
 
-        res.json({ success: true });
+        res.json({
+            success: true,
+            message: "Feedback sent"
+        });
 
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ success: false });
+        console.error("FEEDBACK ERROR:", err);
+
+        res.status(500).json({
+            success: false,
+            error: "Failed to send feedback"
+        });
     }
 });
 
