@@ -68,7 +68,7 @@ app.post("/api/tickets", async (req, res) => {
         const { name, email, category, message } = req.body;
 
         const ticketId = generateTicketId("SUP");
-
+        console.log("WEBHOOK:", process.env.DISCORD_TICKETS_WEBHOOK);
         await sendDiscordWebhook(process.env.DISCORD_TICKETS_WEBHOOK, {
             title: "🎫 New Support Ticket",
             color: 3447003,
