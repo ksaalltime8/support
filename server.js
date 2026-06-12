@@ -16,7 +16,17 @@ app.use(cors({
 
 app.use(express.json());
 
-/* -------------------- HEALTH ROUTES -------------------- */
+/* -------------------- CRASH HANDLING -------------------- */
+
+process.on("uncaughtException", (err) => {
+    console.error("❌ UNCAUGHT EXCEPTION:", err);
+});
+
+process.on("unhandledRejection", (err) => {
+    console.error("❌ UNHANDLED REJECTION:", err);
+});
+
+/* -------------------- HEALTH -------------------- */
 
 app.get("/", (req, res) => {
     res.json({
@@ -32,16 +42,6 @@ app.get("/api/health", (req, res) => {
     });
 });
 
-/* -------------------- CRASH PROTECTION -------------------- */
-
-process.on("uncaughtException", (err) => {
-    console.error("UNCAUGHT EXCEPTION:", err);
-});
-
-process.on("unhandledRejection", (err) => {
-    console.error("UNHANDLED REJECTION:", err);
-});
-
 /* -------------------- HELPERS -------------------- */
 
 function generateTicketId(prefix = "SUP") {
@@ -50,26 +50,45 @@ function generateTicketId(prefix = "SUP") {
 
 async function sendDiscordWebhook(webhook, embed) {
     try {
-        if (!webhook) return;
+        if (!webhook) {
+            console.error("❌ Missing webhook URL");
+            return;
+        }
 
         await axios.post(webhook, {
             embeds: [embed]
         });
 
+        console.log("✅ Discord webhook sent");
+
     } catch (err) {
-        console.error("Discord webhook error:", err.message);
+        console.error("❌ Discord webhook failed:", err.response?.data || err.message);
     }
 }
 
-/* -------------------- SUPPORT TICKETS -------------------- */
+/* -------------------- TICKETS -------------------- */
 
 app.post("/api/tickets", async (req, res) => {
     try {
-        const { name, email, category, message } = req.body;
+        console.log("🔥 /api/tickets HIT");
+        console.log("BODY:", req.body);
+
+        const { name, email, category, message } = req.body || {};
+
+        if (!message) {
+            return res.status(400).json({
+                success: false,
+                error: "Message is required"
+            });
+        }
 
         const ticketId = generateTicketId("SUP");
-        console.log("WEBHOOK:", process.env.DISCORD_TICKETS_WEBHOOK);
-        await sendDiscordWebhook(process.env.DISCORD_TICKETS_WEBHOOK, {
+
+        const webhook = process.env.DISCORD_TICKETS_WEBHOOK;
+
+        console.log("WEBHOOK:", webhook);
+
+        await sendDiscordWebhook(webhook, {
             title: "🎫 New Support Ticket",
             color: 3447003,
             fields: [
@@ -82,14 +101,18 @@ app.post("/api/tickets", async (req, res) => {
             timestamp: new Date()
         });
 
-        res.json({
+        return res.json({
             success: true,
             ticketId
         });
 
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ success: false });
+        console.error("❌ TICKET ERROR:", err);
+
+        return res.status(500).json({
+            success: false,
+            error: err.message
+        });
     }
 });
 
@@ -97,7 +120,7 @@ app.post("/api/tickets", async (req, res) => {
 
 app.post("/api/report-bug", async (req, res) => {
     try {
-        const { name, email, title, description, version } = req.body;
+        const { name, email, title, description, version } = req.body || {};
 
         await sendDiscordWebhook(process.env.DISCORD_BUGS_WEBHOOK, {
             title: "🐞 New Bug Report",
@@ -120,11 +143,11 @@ app.post("/api/report-bug", async (req, res) => {
     }
 });
 
-/* -------------------- FEATURE REQUESTS -------------------- */
+/* -------------------- FEATURE REQUEST -------------------- */
 
 app.post("/api/feature-request", async (req, res) => {
     try {
-        const { name, email, feature, details } = req.body;
+        const { name, email, feature, details } = req.body || {};
 
         await sendDiscordWebhook(process.env.DISCORD_FEATURES_WEBHOOK, {
             title: "💡 Feature Request",
@@ -150,7 +173,7 @@ app.post("/api/feature-request", async (req, res) => {
 
 app.post("/api/feedback", async (req, res) => {
     try {
-        const { name, feedback } = req.body;
+        const { name, feedback } = req.body || {};
 
         await sendDiscordWebhook(process.env.DISCORD_FEEDBACK_WEBHOOK, {
             title: "⭐ User Feedback",
@@ -174,7 +197,7 @@ app.post("/api/feedback", async (req, res) => {
 
 app.post("/api/billing", async (req, res) => {
     try {
-        const { name, email, issue } = req.body;
+        const { name, email, issue } = req.body || {};
 
         await sendDiscordWebhook(process.env.DISCORD_BILLING_WEBHOOK, {
             title: "💳 Billing Support",
@@ -199,7 +222,7 @@ app.post("/api/billing", async (req, res) => {
 
 app.post("/api/security", async (req, res) => {
     try {
-        const { name, email, report } = req.body;
+        const { name, email, report } = req.body || {};
 
         await sendDiscordWebhook(process.env.DISCORD_SECURITY_WEBHOOK, {
             title: "🔒 Security Report",
@@ -220,8 +243,8 @@ app.post("/api/security", async (req, res) => {
     }
 });
 
-/* -------------------- START SERVER -------------------- */
+/* -------------------- START -------------------- */
 
 app.listen(PORT, () => {
-    console.log(`Support API running on port ${PORT}`);
+    console.log(`🚀 Support API running on port ${PORT}`);
 });
